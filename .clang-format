@@ -1,0 +1,9 @@
+AllowShortBlocksOnASingleLine: 'false'
+AllowShortCaseLabelsOnASingleLine: 'false'
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+AllowShortLoopsOnASingleLine: 'false'
+BreakBeforeBraces: Linux
+SpaceBeforeParens: Always
+TabWidth: '4'
