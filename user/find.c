@@ -7,8 +7,22 @@
 const char curDir = '.';
 const char parentDir[3] = "..\0";
 
+const int BUFFER_SIZE = 512;
+
+void strcat(char *str1, char *str2) {
+  int str1len = strlen(str1);
+  int str2len = strlen(str2);
+  if (str1len + str2len > BUFFER_SIZE) {
+    return;
+  }
+  str1[str1len + str2len] = 0;
+  while (str2len-- > 0) {
+    str1[str1len + str2len] = str2[str2len];
+  }
+}
+
 void find(char *path, char *name) {
-  char buf[512], *p;
+  char buf[BUFFER_SIZE], *p;
   int fd;
   struct dirent de;
   struct stat st;
@@ -34,7 +48,8 @@ void find(char *path, char *name) {
         printf("find: path too long\n");
         break;
       }
-      strcpy(buf, path);
+      //   strcpy(buf, path);
+      strcat(buf, path);
       p = buf + strlen(buf);
       *p++ = '/';
       while (read(fd, &de, sizeof(de)) == sizeof(de)) {
