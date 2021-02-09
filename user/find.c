@@ -48,8 +48,8 @@ void find(char *path, char *name) {
         printf("find: path too long\n");
         break;
       }
-      //   strcpy(buf, path);
-      strcat(buf, path);
+      strcpy(buf, path);
+      // strcat(buf, path);
       p = buf + strlen(buf);
       *p++ = '/';
       while (read(fd, &de, sizeof(de)) == sizeof(de)) {
