@@ -42,3 +42,6 @@ int memcmp(const void *, const void *, uint);
 void *memcpy(void *, const void *, uint);
 
 int trace(int cmd);
+
+struct sysinfo;
+int sysinfo(struct sysinfo *);
