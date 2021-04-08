@@ -455,6 +455,7 @@ int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   }
 }
 
+// ======== solution for pgtbl ---- part 1=============
 // Print a page table
 void vmprint_helper(pagetable_t pagetable, int level)
 {
@@ -481,3 +482,4 @@ void vmprint(pagetable_t pgt)
   printf("page table %p\n", pgt);
   vmprint_helper(pgt, 0);
 }
+// ======== solution for pgtbl ---- part 1=============
