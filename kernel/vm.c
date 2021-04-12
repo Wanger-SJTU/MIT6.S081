@@ -5,7 +5,8 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
-
+#include "spinlock.h"
+#include "proc.h"
 /*
  * the kernel's page table.
  */
@@ -133,7 +134,8 @@ kvmpa(uint64 va)
   pte_t *pte;
   uint64 pa;
 
-  pte = walk(kernel_pagetable, va, 0);
+  // pte = walk(kernel_pagetable, va, 0);
+  pte = walk(myproc()->kernel_pagetable, va, 0);
   if (pte == 0)
     panic("kvmpa");
   if ((*pte & PTE_V) == 0)
@@ -482,4 +484,31 @@ void vmprint(pagetable_t pgt)
   printf("page table %p\n", pgt);
   vmprint_helper(pgt, 0);
 }
-// ======== solution for pgtbl ---- part 1=============
+// ======== solution for pgtbl ---- part 2=============
+
+void uvmmap(pagetable_t pagetable, uint64 va, uint64 pa, uint64 sz, int perm)
+{
+  if (mappages(pagetable, va, sz, pa, perm) != 0)
+    panic("uvmmap");
+}
+
+pagetable_t proc_kvminit()
+{
+  pagetable_t pagetable = uvmcreate();
+  if (pagetable == 0)
+  {
+    return 0;
+  }
+  // for (int i = 0; i < 512; ++i)
+  // {
+  //   pagetable[i] = kernel_pagetable[i];
+  // }
+  uvmmap(pagetable, UART0, UART0, PGSIZE, PTE_R | PTE_W);
+  uvmmap(pagetable, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
+  uvmmap(pagetable, CLINT, CLINT, 0x10000, PTE_R | PTE_W);
+  uvmmap(pagetable, PLIC, PLIC, 0x400000, PTE_R | PTE_W);
+  uvmmap(pagetable, KERNBASE, KERNBASE, (uint64)etext - KERNBASE, PTE_R | PTE_X);
+  uvmmap(pagetable, (uint64)etext, (uint64)etext, PHYSTOP - (uint64)etext, PTE_R | PTE_W);
+  uvmmap(pagetable, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+  return pagetable;
+}
