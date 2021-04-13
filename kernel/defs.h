@@ -178,12 +178,21 @@ uint64 walkaddr(pagetable_t, uint64);
 int copyout(pagetable_t, uint64, char *, uint64);
 int copyin(pagetable_t, char *, uint64, uint64);
 int copyinstr(pagetable_t, char *, uint64, uint64);
+// ======== solution for pgtbl ---- part 2=============
 // pgt lab
 void vmprint(pagetable_t pgt);
 pagetable_t proc_kvminit();
 void uvmmap(pagetable_t pagetable, uint64 va, uint64 pa, uint64 sz, int perm);
-pte_t *
-walk(pagetable_t pagetable, uint64 va, int alloc);
+pte_t *walk(pagetable_t pagetable, uint64 va, int alloc);
+void u2kvmcopy(pagetable_t upagetable, pagetable_t kpagetable, uint64 oldsz, uint64 newsz);
+// ======== solution for pgtbl ---- end=============
+
+// ======== solution for pgtbl ---- part 3=============
+// kernel/vmcopyin.c
+int copyin_new(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len);
+int copyinstr_new(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max);
+// ======== solution for pgtbl ---- end=============
+
 // plic.c
 void plicinit(void);
 void plicinithart(void);

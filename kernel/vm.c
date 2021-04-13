@@ -134,8 +134,10 @@ kvmpa(uint64 va)
   pte_t *pte;
   uint64 pa;
 
+  // ======== solution for pgtbl ---- part 2=============
   // pte = walk(kernel_pagetable, va, 0);
   pte = walk(myproc()->kernel_pagetable, va, 0);
+  // ======== solution for pgtbl ---- end   =============
   if (pte == 0)
     panic("kvmpa");
   if ((*pte & PTE_V) == 0)
@@ -387,6 +389,7 @@ int copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 // Return 0 on success, -1 on error.
 int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
 {
+  return copyin_new(pagetable, dst, srcva, len);
   uint64 n, va0, pa0;
 
   while (len > 0)
@@ -413,6 +416,7 @@ int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
 // Return 0 on success, -1 on error.
 int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 {
+  return copyinstr_new(pagetable, dst, srcva, max);
   uint64 n, va0, pa0;
   int got_null = 0;
 
@@ -484,8 +488,8 @@ void vmprint(pagetable_t pgt)
   printf("page table %p\n", pgt);
   vmprint_helper(pgt, 0);
 }
-// ======== solution for pgtbl ---- part 2=============
 
+// ======== solution for pgtbl ---- part 2=============
 void uvmmap(pagetable_t pagetable, uint64 va, uint64 pa, uint64 sz, int perm)
 {
   if (mappages(pagetable, va, sz, pa, perm) != 0)
@@ -511,4 +515,27 @@ pagetable_t proc_kvminit()
   uvmmap(pagetable, (uint64)etext, (uint64)etext, PHYSTOP - (uint64)etext, PTE_R | PTE_W);
   uvmmap(pagetable, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
   return pagetable;
+}
+
+// ======== solution for pgtbl ---- part 3=============
+// copy the user page table to kernel page table
+void u2kvmcopy(pagetable_t upagetable, pagetable_t kpagetable, uint64 oldsz, uint64 newsz)
+{
+  pte_t *pte_from, *pte_to;
+  uint64 a, pa;
+  uint flags;
+
+  if (newsz < oldsz)
+    return;
+  oldsz = PGROUNDUP(oldsz);
+  for (a = oldsz; a < newsz; a += PGSIZE)
+  {
+    if ((pte_from = walk(upagetable, a, 0)) == 0)
+      panic("u2kvmcopy: pte should exist");
+    if ((pte_to = walk(kpagetable, a, 1)) == 0) // copy the pte to the same address at kernel page table
+      panic("u2kvmcopy: walk fails");
+    pa = PTE2PA(*pte_from);
+    flags = (PTE_FLAGS(*pte_from) & (~PTE_U));
+    *pte_to = PA2PTE(pa) | flags;
+  }
 }

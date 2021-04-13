@@ -286,6 +286,9 @@ void userinit(void)
   uvminit(p->pagetable, initcode, sizeof(initcode));
   p->sz = PGSIZE;
 
+  // ======== solution for pgtbl ---- part 3=============
+  u2kvmcopy(p->pagetable, p->kernel_pagetable, 0, p->sz);
+
   // prepare for the very first "return" from kernel to user.
   p->trapframe->epc = 0;     // user program counter
   p->trapframe->sp = PGSIZE; // user stack pointer
@@ -312,12 +315,15 @@ int growproc(int n)
     {
       return -1;
     }
+    // ======== solution for pgtbl ---- part 3=============
+    u2kvmcopy(p->pagetable, p->kernel_pagetable, sz - n, sz);
   }
   else if (n < 0)
   {
     sz = uvmdealloc(p->pagetable, sz, sz + n);
   }
   p->sz = sz;
+
   return 0;
 }
 
@@ -357,6 +363,9 @@ int fork(void)
     if (p->ofile[i])
       np->ofile[i] = filedup(p->ofile[i]);
   np->cwd = idup(p->cwd);
+  // ======== solution for pgtbl ---- part 3=============
+  u2kvmcopy(np->pagetable, np->kernel_pagetable, 0, np->sz);
+  // ======== solution for pgtbl ---- part 3=============
 
   safestrcpy(np->name, p->name, sizeof(p->name));
 
