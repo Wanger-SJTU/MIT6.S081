@@ -67,16 +67,20 @@ usertrap(void)
     syscall();
   } else if(r_scause() == 15 || r_scause() == 13){
     uint64 va = r_stval();
+    if (va > p->sz || va < PGROUNDDOWN(p->trapframe->sp)) {
+        p->killed = 1;
+        exit(-1);
+    } 
     char *mem;
     mem = kalloc();
-    if(mem == 0){
-      panic("OOM");
+    if (mem == 0) {
       p->killed = 1;
+      exit(-1);
     }
     memset(mem, 0, PGSIZE);
-    if(mappages(p->pagetable, PGROUNDDOWN(va), PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
+    if (mappages(p->pagetable, PGROUNDDOWN(va), PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
       kfree(mem);
-      panic("lazy alloc map failed");
+      // panic("lazy alloc map failed");
       p->killed = 1;
     }
 
