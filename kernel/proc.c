@@ -10,16 +10,17 @@ struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
 
+
 struct proc *initproc;
 
 int nextpid = 1;
 struct spinlock pid_lock;
-
 extern void forkret(void);
 static void wakeup1(struct proc *chan);
 static void freeproc(struct proc *p);
 
 extern char trampoline[]; // trampoline.S
+
 
 // initialize the proc table at boot time.
 void

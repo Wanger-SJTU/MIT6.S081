@@ -23,12 +23,94 @@ struct {
   struct run *freelist;
 } kmem;
 
+
+//lab6 
+struct  {
+  struct spinlock lock;
+  int cnt[PGROUNDUP(PHYSTOP)/PGSIZE];
+} refcount;
+
+void
+refcinit()
+{
+  initlock(&refcount.lock, "refcount");
+  for (int i = 0; i < PGROUNDUP(PHYSTOP) / PGSIZE; i++) {
+    refcount.cnt[i] = 0;
+  }
+}
+   
+void
+refcinc(void *pa)
+{
+  acquire(&refcount.lock);
+  refcount.cnt[PA2IDX((uint64)pa)]++;
+  release(&refcount.lock);
+}
+   
+void
+refcdec(void *pa)
+{
+  acquire(&refcount.lock);
+  refcount.cnt[PA2IDX((uint64)pa)]--;
+  release(&refcount.lock);
+}
+   
+int
+getrefc(void *pa)
+{
+  return refcount.cnt[PA2IDX((uint64)pa)];
+}
+
+// alloc for cow new added
+int cow_alloc(pagetable_t pagetable, uint64 va) 
+{
+  uint64 pa;
+  pte_t *pte;
+  uint flags;
+   
+  if (va >= MAXVA) 
+    return -1; 
+  
+  va = PGROUNDDOWN(va);
+  pte = walk(pagetable, va, 0);
+  
+  if (pte == 0) 
+    return -1;
+  if ((*pte & PTE_V) == 0) 
+    return -1;
+  pa = PTE2PA(*pte);
+  
+  if (pa == 0) 
+    return -1;
+  
+  flags = PTE_FLAGS(*pte);
+   
+  if (flags & PTE_COW) {
+    char *mem = kalloc();
+    if (mem == 0) 
+      return -1;
+    memmove(mem, (char*)pa, PGSIZE);
+    flags = (flags & ~PTE_COW) | PTE_W;
+    *pte = PA2PTE((uint64)mem) | flags;
+    kfree((void*)pa);
+    return 0;
+  }
+  return 0;
+}
+
 void
 kinit()
 {
+  refcinit();
   initlock(&kmem.lock, "kmem");
   freerange(end, (void*)PHYSTOP);
+  char *p;
+  p = (char*)PGROUNDUP((uint64)end);
+  for(; p + PGSIZE <= (char*)PHYSTOP; p += PGSIZE) {
+    refcinc((void*)p);
+  }
 }
+
 
 void
 freerange(void *pa_start, void *pa_end)
@@ -50,6 +132,10 @@ kfree(void *pa)
 
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
+
+  refcdec(pa);
+  if(getrefc(pa) > 0) 
+    return;
 
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
@@ -75,8 +161,8 @@ kalloc(void)
   if(r)
     kmem.freelist = r->next;
   release(&kmem.lock);
-
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
+  refcinc(r);
   return (void*)r;
 }
