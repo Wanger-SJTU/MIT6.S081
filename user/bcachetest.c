@@ -108,7 +108,8 @@ test0()
       exit(1);
     }
   }
-  m = ntas(0);
+  m = ntas(1);
+  printf("m=%d\n", m);
   for(int i = 0; i < NCHILD; i++){
     dir[0] = '0' + i;
     int pid = fork();
@@ -133,6 +134,8 @@ test0()
   }
   printf("test0 results:\n");
   n = ntas(1);
+  printf("n=%d\n", n);
+
   if (n-m < 500)
     printf("test0: OK\n");
   else
